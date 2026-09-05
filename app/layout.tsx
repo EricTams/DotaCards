@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Ancient Path — Dota Cards',
   description: 'Explore a maze, build your hero deck, and defeat the enemy Ancient.',
+  icons: { icon: `${process.env.PAGES_BASE_PATH || ''}/favicon.svg` },
 };
 
 export default function RootLayout({

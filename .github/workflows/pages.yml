@@ -28,6 +28,9 @@ jobs:
       - run: npm run build
         env:
           PAGES_BASE_PATH: /DotaCards
+      - run: node scripts/prepare-pages.mjs
+        env:
+          PAGES_BASE_PATH: /DotaCards
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

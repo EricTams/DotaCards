@@ -30,6 +30,6 @@ The optional WebMCP tools expose only revealed game information and the same val
 
 ## GitHub Pages
 
-GitHub Pages is the selected publishing target. The `main` branch workflow tests and statically exports the game, then publishes `out/`. `PAGES_BASE_PATH=/DotaCards` enables static export and supplies the project URL prefix. Local `npm run dev` stays at `/`.
+GitHub Pages is the selected publishing target. The `main` branch workflow tests and statically exports the game, then publishes `out/`. `PAGES_BASE_PATH=/DotaCards` enables static export and supplies the project asset prefix. `node scripts/prepare-pages.mjs` stages the static output in `out/` and verifies its asset URLs. Local `npm run dev` stays at `/`.
 
 The `.openai/hosting.json` registration belongs to an unused, unpublished Sites draft; it is not used by the GitHub Pages build. No Sites source upload or deployment occurred.
