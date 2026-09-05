@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRun,reduce,makeMap,stats,publicState,CARDS,HEROES,ASPECTS} from '../lib/game.mjs';
-function fight(hero='earth',enemy='melee'){let s=createRun(hero);s.map[51].type='enemy';s.map[51].enemy=enemy;return reduce(s,{type:'move',x:1,y:5});}
+import {createRun,reduce,makeMap,stats,publicState,CARDS,HEROES,ASPECTS,pathTo} from '../lib/game.mjs';
+function fight(hero='earth',enemy='melee'){let s=createRun(hero);s.map[51].type='enemy';s.map[51].enemy=enemy;return reduce(reduce(s,{type:'move',x:1,y:5}),{type:'encounter',choice:'fight'});}
 test('all heroes have exactly 3 innate and 8 paired aspect starters',()=>{for(const h of Object.keys(HEROES)){let s=createRun(h);assert.equal(s.deck.length,11);assert.equal(s.deck.filter(id=>CARDS[id].aspect==='Innate').length,3);assert(!s.deck.includes(HEROES[h].ult));}});
 test('3x3 reveal includes walls, restores once, caps resources, hides remaining contents',()=>{let s=createRun('earth');s.hp=10;s.mana=0;let before=s.map.filter(t=>t.seen).length;let n=reduce(s,{type:'move',x:1,y:5});let count=n.map.filter(t=>t.seen).length-before;assert.equal(count,3);assert.equal(n.hp,13);assert.equal(n.mana,1.5);assert(n.map[42].seen);n=reduce(n,{type:'move',x:0,y:5});assert.equal(n.hp,13);assert.deepEqual(Object.keys(publicState(n).map.find(t=>!t.seen)).sort(),['seen','x','y']);});
-test('seeing an enemy does not fight; entering it does; movement rejected during combat',()=>{let s=createRun('earth');s.map[51].type='enemy';s.map[51].enemy='melee';assert.equal(s.phase,'map');s=reduce(s,{type:'move',x:1,y:5});assert.equal(s.phase,'combat');assert.throws(()=>reduce(s,{type:'move',x:0,y:5}));});
+test('entering an enemy offers fight or retreat; movement rejected during combat',()=>{let s=createRun('earth');s.map[51].type='enemy';s.map[51].enemy='melee';assert.equal(s.phase,'map');s=reduce(s,{type:'move',x:1,y:5});assert.equal(s.phase,'approach');assert.equal(s.combat,null);s=reduce(s,{type:'encounter',choice:'fight'});assert.equal(s.phase,'combat');assert.throws(()=>reduce(s,{type:'move',x:0,y:5}));});
 test('every Earthshaker spell triggers Aftershock including zero mana and twice in one turn',()=>{let s=fight();s.combat.hand=['cask','cask'];let hp=s.combat.hp;s=reduce(s,{type:'play',index:0});s=reduce(s,{type:'play',index:0});assert.equal(s.combat.hp,hp-10);assert.equal(s.combat.block,6);assert.equal(s.metrics.passives,2);});
 test('lethal damage cancels intent and grants pre-level recovery',()=>{let s=fight();s.hp=15;s.mana=0;s.combat.hp=5;s.combat.hand=['crush'];s=reduce(s,{type:'play',index:0});assert.equal(s.phase,'reward');assert.equal(s.hp,18);assert.equal(s.mana,0);assert.equal(s.level,2);});
 test('Gris-gris resolves before Curse, restores half maxima once, second death loses',()=>{let s=fight('witch','elite');s.hp=1;s.mana=0;s.combat.turn=2;s.combat.curse=2;s=reduce(s,{type:'end'});assert.equal(s.hp,16);assert.equal(s.mana,8);assert.equal(s.gris,false);assert.equal(s.combat.hp,36);s.hp=1;s.combat.turn=2;s=reduce(s,{type:'end'});assert.equal(s.phase,'lost');});
@@ -32,4 +32,20 @@ test('combat and event rewards exclude all basic aspect starters while retaining
    assert.equal(CARDS[result.reward.cards[2]].aspect,HEROES[hero].aspects[1]);
   }
  }
+});
+
+test('retreat returns to the immediately previous tile without clearing enemy or granting repeat recovery',()=>{
+ let s=createRun('earth');s.map[51].type='enemy';s.map[51].enemy='melee';s.hp=10;s.mana=0;
+ s=reduce(s,{type:'navigate',x:1,y:5});assert.equal(s.phase,'approach');const hp=s.hp,mana=s.mana;
+ s=reduce(s,{type:'encounter',choice:'retreat'});assert.equal(s.phase,'map');assert.deepEqual([s.x,s.y],[0,5]);assert.equal(s.hp,hp);assert.equal(s.mana,mana);assert.equal(s.map[51].done,false);
+ s=reduce(s,{type:'navigate',x:1,y:5});assert.equal(s.hp,hp);assert.equal(s.mana,mana);
+ s=reduce(s,{type:'encounter',choice:'fight'});assert.throws(()=>reduce(s,{type:'encounter',choice:'retreat'}));
+});
+test('click navigation follows known safe routes and stops for encounters',()=>{
+ let s=createRun('earth');s.map.forEach(t=>{t.seen=true;t.type='empty';delete t.enemy;t.wall=false});
+ s.map[51].type='enemy';s.map[51].enemy='melee';let route=pathTo(s,2,5);assert(route.length>2);assert(route.every(a=>a.x!==1||a.y!==5));
+ let n=reduce(s,{type:'navigate',x:2,y:5});assert.deepEqual([n.x,n.y],[2,5]);assert.equal(n.phase,'map');
+ s.map[52].seen=false;assert.throws(()=>pathTo(s,2,5));
+ s.map[51].type='event';delete s.map[51].enemy;s.map[52].seen=true;
+ n=reduce(s,{type:'navigate',x:2,y:5});assert.equal(n.phase,'event');assert.deepEqual([n.x,n.y],[1,5]);
 });

@@ -11,3 +11,5 @@ export function stats(state:any):any;
 export function intent(state:any):any;
 export function publicState(state:any):any;
 export function makeMap():any[];
+
+export function pathTo(state:any,x:number,y:number):any[];
