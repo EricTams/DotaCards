@@ -1,0 +1,13 @@
+export const HEROES: Record<string, any>;
+export const CARDS: Record<string, any>;
+export const RELICS: Record<string, any>;
+export const ITEMS: Record<string, any>;
+export const ASPECTS: Record<string, string[]>;
+export const ENEMIES: Record<string, any>;
+export const TERRAIN: string[];
+export function createRun(hero:string,seed?:number):any;
+export function reduce(state:any,action:any):any;
+export function stats(state:any):any;
+export function intent(state:any):any;
+export function publicState(state:any):any;
+export function makeMap():any[];
