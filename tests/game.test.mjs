@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRun,reduce,makeMap,stats,publicState,CARDS,HEROES} from '../lib/game.mjs';
+import {createRun,reduce,makeMap,stats,publicState,CARDS,HEROES,ASPECTS} from '../lib/game.mjs';
 function fight(hero='earth',enemy='melee'){let s=createRun(hero);s.map[51].type='enemy';s.map[51].enemy=enemy;return reduce(s,{type:'move',x:1,y:5});}
 test('all heroes have exactly 3 innate and 8 paired aspect starters',()=>{for(const h of Object.keys(HEROES)){let s=createRun(h);assert.equal(s.deck.length,11);assert.equal(s.deck.filter(id=>CARDS[id].aspect==='Innate').length,3);assert(!s.deck.includes(HEROES[h].ult));}});
 test('3x3 reveal includes walls, restores once, caps resources, hides remaining contents',()=>{let s=createRun('earth');s.hp=10;s.mana=0;let before=s.map.filter(t=>t.seen).length;let n=reduce(s,{type:'move',x:1,y:5});let count=n.map.filter(t=>t.seen).length-before;assert.equal(count,3);assert.equal(n.hp,13);assert.equal(n.mana,1.5);assert(n.map[42].seen);n=reduce(n,{type:'move',x:0,y:5});assert.equal(n.hp,13);assert.deepEqual(Object.keys(publicState(n).map.find(t=>!t.seen)).sort(),['seen','x','y']);});
@@ -16,3 +16,20 @@ test('resource relic acquisition changes max only',()=>{let s=createRun('earth')
 test('map has a safe connected route between Ancients with all enemies blocked',()=>{let m=makeMap(),seen=new Set([50]),q=[50];while(q.length){let idx=q.shift(),t=m[idx];for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let x=t.x+dx,y=t.y+dy;if(x<0||x>9||y<0||y>9)continue;let n=y*10+x;if(seen.has(n)||m[n].wall||m[n].enemy)continue;seen.add(n);q.push(n);}}assert([...seen].some(i=>Math.abs(m[i].x-9)+Math.abs(m[i].y-5)===1));assert(seen.size>25);});
 test('same seed and actions reproduce gameplay',()=>{let a=fight(),b=fight();for(let n=0;n<2;n++){a=reduce(a,{type:'end'});b=reduce(b,{type:'end'});}delete a.started;delete b.started;assert.deepEqual(a,b);});
 test('high-agility late Drow draws 3 more than low-agility starting Earthshaker',()=>{let s=fight('drow');s.level=16;s.combat.agile=true;assert.equal(stats(s).draw-stats(createRun('earth')).draw,3);});
+
+test('combat and event rewards exclude all basic aspect starters while retaining innate abilities',()=>{
+ const starters=new Set(Object.values(ASPECTS).flat());
+ for(const hero of Object.keys(HEROES))for(let seed=1;seed<=30;seed++){
+  let s=fight(hero);s.seed=seed;s.combat.hp=1;s.combat.hand=['crush'];
+  const victory=reduce(s,{type:'play',index:0});
+  let event=createRun(hero,seed);event.phase='event';event.reward={kind:'cache',tile:50};
+  event=reduce(event,{type:'event',choice:'pay'});
+  for(const result of [victory,event]){
+   assert.equal(result.reward.cards.length,3);
+   assert(result.reward.cards.every(id=>!starters.has(id)));
+   assert(HEROES[hero].innate.includes(result.reward.cards[0]));
+   assert.equal(CARDS[result.reward.cards[1]].aspect,HEROES[hero].aspects[0]);
+   assert.equal(CARDS[result.reward.cards[2]].aspect,HEROES[hero].aspects[1]);
+  }
+ }
+});
