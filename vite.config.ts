@@ -51,11 +51,10 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       vinext(),
-      sites(),
-      cloudflare({
+      ...(process.env.PAGES_BASE_PATH !== undefined ? [] : [sites(), cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
         config: localBindingConfig,
-      }),
+      })]),
     ],
   };
 });
