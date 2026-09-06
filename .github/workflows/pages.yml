@@ -23,7 +23,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/game.test.mjs
+      - run: node --test tests/*.test.mjs
       - run: npx tsc --noEmit
       - run: npm run build
         env:

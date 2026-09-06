@@ -1,0 +1,3 @@
+import {createRun,reduce} from '../lib/game.mjs';
+import {createBot,decide,observe} from '../lib/bot.mjs';
+for(const hero of ['earth','witch','drow']){const results=[];for(let seed=1;seed<=20;seed++){let s=createRun(hero,seed),m=createBot(seed);while(m.steps<1500&&!['won','lost'].includes(s.phase)){const d=decide(observe(s),m);if(!d.action)break;s=reduce(s,d.action);s.history=[];}results.push({outcome:s.phase,level:s.level,steps:m.steps});}console.log(JSON.stringify({hero,runs:results.length,wins:results.filter(r=>r.outcome==='won').length,losses:results.filter(r=>r.outcome==='lost').length,stalled:results.filter(r=>!['won','lost'].includes(r.outcome)).length,averageLevel:results.reduce((n,r)=>n+r.level,0)/results.length}));}
