@@ -36,7 +36,7 @@ The `.openai/hosting.json` registration belongs to an unused, unpublished Sites 
 
 ## Simple AI
 
-Step advances one bot action; Play runs an action every 650 ms; Pause or any manual gameplay action hands control back. Opening a detail panel pauses it. It stops on win, loss, no useful route, or 1,500 actions.
+The Auto-play switch in the hero panel runs one action every 650 ms. Switch it off or take any manual gameplay action to take control. Step advances one action while paused. Opening a detail panel pauses it. It stops on win, loss, no useful route, or 1,500 actions.
 
 `lib/bot.mjs` receives a redacted observation with revealed terrain and the visible hand. It uses its own seeded RNG, picks random affordable cards without evaluating combinations or enemy intent, takes random rewards, and follows a few route/resource thresholds. It does not simulate future turns or inspect the draw pile.
 
